@@ -1,6 +1,3 @@
-require("babel-polyfill")
-require('es8-polyfill')
-
 let assert = require('assert')
 let PDF2Pic = require('./../lib')
 let PDF2PicInstance = new PDF2Pic({
