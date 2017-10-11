@@ -5,8 +5,7 @@ Node module for converting PDF to image based on pdf2img by Fitra Adity
 
 ## Prerequisite  
   
-* node >= 8.5.0  
-* npm >=5.4.2  
+* node >= 7.10.0
   
 ## Dependencies
   
