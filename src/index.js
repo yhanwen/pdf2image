@@ -1,121 +1,16 @@
-import "gm-base64"
-import gm from "gm"
-import path from "path"
-import fs from "fs-extra"
-import Promise from "bluebird"
+import { GraphicMagick } from "@app/gm/GraphicMagick"
+import {
+  sep as separator,
+  basename,
+  extname
+} from "path"
+import {
+  createReadStream,
+  existsSync,
+  mkdirsSync
+} from "fs-extra"
 
-export default class PDF2Pic {
-  static defaultOptions = {
-    quality: 0,
-    format: "png",
-    size: "768x512",
-    density: 72,
-    savedir: "./",
-    savename: "untitled",
-    compression: "jpeg"
-  }
-
-  constructor(options = {}) {
-    this.options = { ...PDF2Pic.defaultOptions, ...options }
-  }
-
-  /**
-   * GM command - identify
-   * @param {String} filepath path to valid file
-   * @param {Mixed} argument gm identify argument
-   * @returns {Promise} Promise
-   */
-  identify(filepath, argument) {
-    let image = gm(filepath)
-
-    return new Promise((resolve, reject) => {
-      if (argument) {
-        image.identify(argument, (error, data) => {
-          if (error) {
-            return reject(error)
-          }
-
-          return resolve(data)
-        })
-      } else {
-        image.identify((error, data) => {
-          if (error) {
-            return reject(error)
-          }
-
-          return resolve(data)
-        })
-      }
-    })
-  }
-
-  /**
-   * Initialize base graphicmagick setup.
-   * @param {Stream} stream fs stream
-   * @param {String} filename save file name
-   * @returns {gm} graphicsmagick object
-   */
-  graphicMagickBaseCommand(stream, filename) {
-    let { density, size, quality, compression } = this.options
-
-    return gm(stream, filename)
-      .density(density, density)
-      .resize(size)
-      .quality(quality)
-      .compress(compression)
-  }
-
-  /**
-   * GM command - write
-   * @param {Stream} stream fs stream
-   * @param {String} output output
-   * @param {String} filename filename
-   * @param {Integer} page page count
-   * @returns {Promise} Promise
-   */
-  writeImage(stream, output, filename, page) {
-    return new Promise((resolve, reject) => {
-      this.graphicMagickBaseCommand(stream, filename)
-        .write(output, (error) => {
-          if (error) {
-            return reject(error)
-          }
-
-          return resolve({
-            name: path.basename(output),
-            size: fs.statSync(output).size / 1000.0,
-            path: output,
-            page
-          })
-        })
-    })
-  }
-
-  /**
-   * GM command - toBase64
-   * @param {Stream} stream fs stream
-   * @param {String} filename filename
-   * @param {Integer} page page count
-   * @returns {Promise} Promise
-   */
-  toBase64(stream, filename, page) {
-    let { format } = this.options
-
-    return new Promise((resolve, reject) => {
-      this.graphicMagickBaseCommand(stream, filename)
-        .toBase64(format, (error, base64) => {
-          if (error) {
-            return reject(error)
-          }
-
-          return resolve({
-            base64,
-            page
-          })
-        })
-    })
-  }
-
+export default class PDF2Pic extends GraphicMagick {
   /**
    * Intialize converter
    * @param {String} pdf_path path to file
@@ -126,16 +21,16 @@ export default class PDF2Pic {
     this.isValidPDF(pdf_path)
     this.fileExists(pdf_path)
 
-    let output = path.basename(pdf_path, path.extname(path.basename(pdf_path)))
+    let output = basename(pdf_path, extname(basename(pdf_path)))
 
     // Set output dir
     if (this.getOption("savedir")) {
-      this.setOption("savedir", this.getOption("savedir") + path.sep)
+      this.setOption("savedir", this.getOption("savedir") + separator)
     } else {
-      this.setOption("savedir", output + path.sep)
+      this.setOption("savedir", output + separator)
     }
 
-    fs.mkdirsSync(this.getOption("savedir"))
+    mkdirsSync(this.getOption("savedir"))
 
     if (!this.getOption("savename")) {
       this.setOption("savename", output)
@@ -160,16 +55,16 @@ export default class PDF2Pic {
     this.isValidPDF(pdf_path)
     this.fileExists(pdf_path)
 
-    let output = path.basename(pdf_path, path.extname(path.basename(pdf_path)))
+    let output = basename(pdf_path, extname(basename(pdf_path)))
 
     // Set output dir
     if (this.getOption("savedir")) {
-      this.setOption("savedir", this.getOption("savedir") + path.sep)
+      this.setOption("savedir", this.getOption("savedir") + separator)
     } else {
-      this.setOption("savedir", output + path.sep)
+      this.setOption("savedir", output + separator)
     }
 
-    fs.mkdirsSync(this.getOption("savedir"))
+    mkdirsSync(this.getOption("savedir"))
 
     if (!this.getOption("savename")) {
       this.setOption("savename", output)
@@ -261,7 +156,7 @@ export default class PDF2Pic {
    */
   async toImage(pdf_path, page = 1) {
     let { savedir, savename, format } = this.getOption()
-    let iStream = fs.createReadStream(pdf_path)
+    let iStream = createReadStream(pdf_path)
     let file = `${savedir.replace(/\/*$/, "/")}${savename}_${page}.${format}`
     let filename = `${this.getFilePath(iStream)}[${page - 1}]`
 
@@ -275,7 +170,7 @@ export default class PDF2Pic {
    * @returns {Promise} Promise
    */
   async streamToBase64(pdf_path, page = 1) {
-    let iStream = fs.createReadStream(pdf_path)
+    let iStream = createReadStream(pdf_path)
     let filename = `${this.getFilePath(iStream)}[${page - 1}]`
 
     return await this.toBase64(iStream, filename, page)
@@ -300,7 +195,7 @@ export default class PDF2Pic {
    * @returns {Mixed} file status
    */
   isValidPDF(pdf_path) {
-    if (path.extname(path.basename(pdf_path)).toLowerCase() !== ".pdf") {
+    if (extname(basename(pdf_path)).toLowerCase() !== ".pdf") {
       throw new Error("File supplied is not a valid PDF")
     }
 
@@ -313,7 +208,7 @@ export default class PDF2Pic {
    * @returns {Mixed} file status
    */
   fileExists(pdf_path) {
-    if (!fs.existsSync(pdf_path)) {
+    if (!existsSync(pdf_path)) {
       throw new Error("File supplied cannot be found")
     }
 

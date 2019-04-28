@@ -2,11 +2,11 @@
 [![Build Status][travis-image]][travis-url]
 [![NPM Version][npm-image]][npm-url]
 [![Downloads Stats][npm-downloads]][npm-url]  
-A utility for converting pdf to image and base64 format.  
+A simple utility for converting PDF file to image.  
 
 ## Prerequisite  
   
-* node >= 4.1.2 
+* node >= 8.10 
 * graphicsmagick
 
 ## Features  
@@ -15,13 +15,6 @@ A utility for converting pdf to image and base64 format.
 * converts pdf to base64. 
 * customizable output.  
 * customizable image quality.  
-  
-## Dependencies
-  
-* bluebird  
-* fs-extra  
-* gm  
-* gm-base64
   
 ## Installation  
   
